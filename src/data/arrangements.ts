@@ -12,6 +12,8 @@ export interface ArrangementContext {
   sourceLabel: string;
   snippet: string;
   timestamp: number;
+  conversationId?: string;
+  messageId?: string;
 }
 
 export interface Arrangement {

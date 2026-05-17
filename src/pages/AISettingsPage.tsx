@@ -83,7 +83,7 @@ export default function AISettingsPage({ onBack }: Props) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'absolute', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column' }}>
 
       {/* 顶部导航 */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '16px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>

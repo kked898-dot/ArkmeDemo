@@ -3,6 +3,7 @@ import {
   Arrangement,
   ArrangementTimeType,
   ArrangementExecutor,
+  ArrangementContext,
   getArrangements,
   saveArrangements,
   updateArrangement,
@@ -45,6 +46,13 @@ const fontStyle = `
   @keyframes dotBounce {
     0%, 60%, 100% { transform: translateY(0) }
     30% { transform: translateY(-6px) }
+  }
+  @keyframes lineFadeIn {
+    0%, 100% { opacity: 0.3 }
+    50% { opacity: 1 }
+  }
+  .ai-input::placeholder {
+    color: #C4C2BC;
   }
 `;
 
@@ -292,6 +300,7 @@ function ArrangementCard({ arrangement, onRefresh, onClick, readOnly = false }: 
           </div>
         )}
       </div>
+    </div>
   );
 }
 
@@ -430,7 +439,7 @@ function CreateArrangementModal({ show, onClose, onRefresh }: CreateArrangementM
           <div style={{ padding: '20px 20px 12px' }}>
             <input
               ref={titleInputRef}
-              className="arrange-title"
+              className="arrange-title focus:outline-none focus:ring-0"
               type="text"
               placeholder="有什么想记下来？"
               value={draftTitle}
@@ -445,6 +454,7 @@ function CreateArrangementModal({ show, onClose, onRefresh }: CreateArrangementM
                 border: 'none',
                 background: 'transparent',
                 outline: 'none',
+                boxShadow: 'none',
                 color: COLORS.textPrimary,
                 padding: '0',
                 borderRadius: '0'
@@ -493,22 +503,22 @@ function CreateArrangementModal({ show, onClose, onRefresh }: CreateArrangementM
             <div style={{ padding: '0 20px 12px 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {draftTimeType === 'deadline' && (
                 <div>
-                  <input type="datetime-local" value={draftStartTime} onChange={e => setDraftStartTime(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
+                  <input className="focus:outline-none focus:ring-0" type="datetime-local" value={draftStartTime} onChange={e => setDraftStartTime(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
                 </div>
               )}
               {draftTimeType === 'timerange' && (
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <div style={{ flex: 1 }}>
-                    <input type="datetime-local" value={draftStartTime} onChange={e => setDraftStartTime(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
+                    <input className="focus:outline-none focus:ring-0" type="datetime-local" value={draftStartTime} onChange={e => setDraftStartTime(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <input type="datetime-local" value={draftEndTime} onChange={e => setDraftEndTime(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
+                    <input className="focus:outline-none focus:ring-0" type="datetime-local" value={draftEndTime} onChange={e => setDraftEndTime(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
                   </div>
                 </div>
               )}
               {draftTimeType === 'reminder' && (
                 <div>
-                  <input type="datetime-local" value={draftStartTime} onChange={e => setDraftStartTime(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
+                  <input className="focus:outline-none focus:ring-0" type="datetime-local" value={draftStartTime} onChange={e => setDraftStartTime(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
                 </div>
               )}
             </div>
@@ -529,13 +539,13 @@ function CreateArrangementModal({ show, onClose, onRefresh }: CreateArrangementM
               {/* 地点 */}
               <div>
                 <div style={{ fontSize: '11px', color: COLORS.textTertiary, fontStyle: 'italic', marginBottom: '6px' }}>地点</div>
-                <input type="text" placeholder="在哪里？" value={draftLocation} onChange={e => setDraftLocation(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary, outline: 'none' }} />
+                <input className="focus:outline-none focus:ring-0" type="text" placeholder="在哪里？" value={draftLocation} onChange={e => setDraftLocation(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
               </div>
               
               {/* 相关人 */}
               <div>
                 <div style={{ fontSize: '11px', color: COLORS.textTertiary, fontStyle: 'italic', marginBottom: '6px' }}>与谁</div>
-                <input type="text" placeholder="用逗号分隔" value={draftRelatedPeople} onChange={e => setDraftRelatedPeople(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary, outline: 'none' }} />
+                <input className="focus:outline-none focus:ring-0" type="text" placeholder="用逗号分隔" value={draftRelatedPeople} onChange={e => setDraftRelatedPeople(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
               </div>
 
               {/* 心情 */}
@@ -591,7 +601,7 @@ function CreateArrangementModal({ show, onClose, onRefresh }: CreateArrangementM
               {/* 备注 */}
               <div>
                 <div style={{ fontSize: '11px', color: COLORS.textTertiary, fontStyle: 'italic', marginBottom: '6px' }}>备注</div>
-                <textarea placeholder="还有什么想说的？" rows={3} value={draftNote} onChange={e => setDraftNote(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary, outline: 'none', resize: 'none' }} />
+                <textarea className="focus:outline-none focus:ring-0" placeholder="还有什么想说的？" rows={3} value={draftNote} onChange={e => setDraftNote(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary, resize: 'none' }} />
               </div>
             </div>
           )}
@@ -610,6 +620,8 @@ interface ArrangementDetailProps {
   onDone: (id: string) => void;
   onSnooze: (id: string) => void;
   onDelete: (id: string) => void;
+  onTeleportToSelf?: (messageId?: string) => void;
+  onTeleportToTestChat?: (conversationId: string, messageId?: string) => void;
 }
 
 function formatDetailTime(timestamp: number | undefined): string {
@@ -634,10 +646,23 @@ function formatDetailDate(timestamp: number): string {
   return `${m}月${d}日`;
 }
 
-function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete }: ArrangementDetailProps) {
+function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, onTeleportToSelf, onTeleportToTestChat }: ArrangementDetailProps) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    // 触发滑入动画
+    setVisible(true);
+  }, []);
+
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 300);
+  };
+
   const handleDelete = () => {
     if (window.confirm("这件事就这样了，确认不做了吗？")) {
-      onDelete(arrangement.id);
+      setVisible(false);
+      setTimeout(() => onDelete(arrangement.id), 300);
     }
   };
 
@@ -655,26 +680,54 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete }:
   }[arrangement.source] || '手动记录';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#ffffff', position: 'relative' }}>
-      {/* 顶部导航栏 */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: '0 20px', 
-        height: '52px',
-        flexShrink: 0 
-      }}>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textSecondary, fontSize: '14px', padding: 0 }}>
-          ← 返回
-        </button>
-        <button style={{ background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: '14px', padding: 0 }}>
-          编辑
-        </button>
-      </div>
+    <>
+      <div
+        onClick={handleClose}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(0,0,0,0.3)',
+          zIndex: 200,
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 300ms ease',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          top: '40px', // 稍微留出顶部空间
+          background: '#ffffff',
+          borderRadius: '20px 20px 0 0',
+          zIndex: 201,
+          transform: visible ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 300ms ease',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 -4px 16px rgba(0,0,0,0.1)',
+        }}
+      >
+        {/* 顶部导航栏 */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: '0 20px', 
+          height: '52px',
+          flexShrink: 0 
+        }}>
+          <button onClick={handleClose} style={{ background: 'none', border: 'none', color: COLORS.textSecondary, fontSize: '14px', padding: 0 }}>
+            ← 返回
+          </button>
+          <button style={{ background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: '14px', padding: 0 }}>
+            编辑
+          </button>
+        </div>
 
-      {/* 内容区 */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '140px' }}>
+        {/* 内容区 */}
+        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '140px' }}>
           {/* ① 标题区域 */}
           <div style={{ padding: '24px 20px 16px' }}>
             <div className="arrange-title" style={{ 
@@ -757,29 +810,113 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete }:
                 <div style={{flex:1, height:'1px', background: COLORS.divider}} />
               </div>
               
-              {arrangement.contexts.map((ctx, idx) => (
-                <div key={idx} style={{ padding: '12px 20px', marginBottom: '8px' }}>
-                  <div style={{ fontSize: '11px', color: COLORS.textTertiary, fontStyle: 'italic', marginBottom: '4px' }}>{ctx.sourceLabel}</div>
-                  <div style={{ fontSize: '13px', color: COLORS.textSecondary, lineHeight: 1.6 }}>"{ctx.snippet}"</div>
-                </div>
-              ))}
+              {arrangement.contexts.map((ctx, idx) => {
+                const isSelf = ctx.sourceType === 'self_message';
+                
+                return (
+                  <div key={idx} style={{ padding: '0 20px', marginBottom: '16px' }}>
+                    <div style={{ 
+                      background: '#F9F8F6', 
+                      borderRadius: '12px', 
+                      padding: '16px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                      position: 'relative'
+                    }}>
+                      <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                        {/* 头像 */}
+                        <div style={{ 
+                          width: '36px', 
+                          height: '36px', 
+                          borderRadius: '8px', 
+                          background: isSelf ? '#1C1C1A' : '#E8E6E0', 
+                          color: isSelf ? '#fff' : COLORS.textPrimary,
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          flexShrink: 0
+                        }}>
+                          {isSelf ? '我' : (ctx.sourceLabel?.charAt(0) || '他')}
+                        </div>
+                        
+                        {/* 气泡内容 */}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '12px', color: COLORS.textTertiary, marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>{ctx.sourceLabel}</span>
+                          </div>
+                          <div style={{ 
+                            background: isSelf ? '#EAE8E2' : '#fff', 
+                            padding: '10px 14px', 
+                            borderRadius: isSelf ? '2px 12px 12px 12px' : '2px 12px 12px 12px',
+                            fontSize: '14px', 
+                            color: COLORS.textPrimary, 
+                            lineHeight: 1.6,
+                            display: 'inline-block',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                          }}>
+                            {ctx.snippet}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 传送按钮 */}
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          onClick={() => {
+                            if (isSelf) {
+                              onTeleportToSelf?.(ctx.messageId);
+                            } else {
+                              if (ctx.conversationId) {
+                                onTeleportToTestChat?.(ctx.conversationId, ctx.messageId);
+                              }
+                            }
+                            // 关闭当前弹窗
+                            handleClose();
+                          }}
+                          style={{
+                            background: '#1C1C1A',
+                            color: '#fff',
+                            border: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '16px',
+                            fontSize: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                            transition: 'transform 0.2s',
+                          }}
+                          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.96)'}
+                          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        >
+                          <span style={{ fontSize: '14px' }}>↩</span>
+                          回到现场
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
-      </div>
+        </div>
 
-      {/* 底部操作区 */}
-      <div style={{ 
-        position: 'absolute', 
-        bottom: 0, 
-        left: 0, 
-        right: 0, 
-        background: 'rgba(255,255,255,0.95)', 
-        backdropFilter: 'blur(8px)',
-        padding: '16px 20px 36px', 
-        borderTop: `1px solid ${COLORS.divider}` 
-      }}>
+        {/* 底部操作区 */}
+        <div style={{ 
+          position: 'absolute', 
+          bottom: 0, 
+          left: 0, 
+          right: 0, 
+          background: 'rgba(255,255,255,0.95)', 
+          backdropFilter: 'blur(8px)',
+          padding: '16px 20px 36px', 
+          borderTop: `1px solid ${COLORS.divider}` 
+        }}>
           <button
-            onClick={() => { onDone(arrangement.id); }}
+            onClick={() => { setVisible(false); setTimeout(() => onDone(arrangement.id), 300); }}
             className="arrange-title"
             style={{ 
               width: '100%', 
@@ -798,7 +935,7 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete }:
           
           <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
             <button
-              onClick={() => { onSnooze(arrangement.id); }}
+              onClick={() => { setVisible(false); setTimeout(() => onSnooze(arrangement.id), 300); }}
               style={{ 
                 flex: 1, 
                 background: '#F0EEE9', 
@@ -828,6 +965,8 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete }:
             </button>
           </div>
         </div>
+      </div>
+    </>
   );
 }
 
@@ -1197,6 +1336,10 @@ __CONFIRM__
     
     setMessages(prev => [...prev, { role: 'ai', content: '记下了。' }]);
     onCreated();
+    
+    setTimeout(() => {
+      onClose();
+    }, 800);
   };
 
   const handleModify = () => {
@@ -1206,33 +1349,75 @@ __CONFIRM__
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: COLORS.cardBg, position: 'relative' }}>
-      {/* 顶部导航 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', flexShrink: 0, borderBottom: `1px solid ${COLORS.divider}` }}>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: '14px', fontStyle: 'italic', padding: 0 }}>
-          × 关闭
-        </button>
-        <div className="arrange-title" style={{ fontSize: '15px', color: COLORS.textPrimary }}>与 AI 聊聊</div>
-        <button onClick={onSwitchToManual} style={{ background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: '12px', fontStyle: 'italic', padding: 0 }}>
-          手动填写
-        </button>
-      </div>
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(0,0,0,0.3)',
+          zIndex: 100,
+          opacity: show ? 1 : 0,
+          pointerEvents: show ? 'auto' : 'none',
+          transition: 'opacity 300ms ease',
+        }}
+      />
 
-      {/* 对话区 */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: '82vh',
+          background: '#F7F5F0',
+          borderRadius: '20px 20px 0 0',
+          zIndex: 101,
+          transform: show ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 300ms ease',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 -4px 16px rgba(0,0,0,0.1)',
+        }}
+      >
+        {/* 顶部导航 */}
+        <div style={{ padding: '16px 20px 0', flexShrink: 0, borderBottom: '1px solid #EAE8E2' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: '18px', padding: 0 }}>
+              ←
+            </button>
+            <div style={{ fontFamily: 'Georgia, serif', fontSize: '15px', color: COLORS.textPrimary, letterSpacing: '1px' }}>与 AI 聊聊</div>
+            <button onClick={onSwitchToManual} style={{ background: 'none', border: 'none', color: '#C4C2BC', fontSize: '11px', fontStyle: 'italic', padding: 0 }}>
+              手动填写
+            </button>
+          </div>
+          <div style={{ fontSize: '11px', color: '#C4C2BC', fontStyle: 'italic', textAlign: 'center', padding: '6px 0 10px' }}>
+            用自然语言说就好，AI 会帮你整理
+          </div>
+        </div>
+
+        {/* 对话区 */}
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 20px', background: '#F7F5F0' }}>
           {messages.map((m, idx) => (
-            <div key={idx} style={{ width: '100%', marginBottom: '16px', textAlign: m.role === 'user' ? 'right' : 'left' }}>
+            <div key={idx} style={{ width: '100%', marginBottom: '20px', textAlign: m.role === 'user' ? 'right' : 'left' }}>
               {m.role === 'ai' ? (
                 <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                  <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: COLORS.textPrimary, flexShrink: 0, marginTop: '8px', marginRight: '8px' }} />
                   {m.isLoading ? (
-                    <div style={{ display: 'flex', gap: '4px', padding: '8px 0' }}>
-                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: COLORS.textTertiary, animation: 'dotBounce 1.4s infinite ease-in-out both' }} />
-                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: COLORS.textTertiary, animation: 'dotBounce 1.4s infinite ease-in-out both', animationDelay: '0.15s' }} />
-                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: COLORS.textTertiary, animation: 'dotBounce 1.4s infinite ease-in-out both', animationDelay: '0.3s' }} />
+                    <div style={{ display: 'flex', gap: '4px', padding: '8px 0', borderLeft: '2px solid #C4C2BC', paddingLeft: '12px', marginBottom: '20px' }}>
+                      <div style={{ width: '16px', height: '1px', background: '#C4C2BC', animation: 'lineFadeIn 1.4s infinite ease-in-out both' }} />
+                      <div style={{ width: '16px', height: '1px', background: '#C4C2BC', animation: 'lineFadeIn 1.4s infinite ease-in-out both', animationDelay: '0.2s' }} />
+                      <div style={{ width: '16px', height: '1px', background: '#C4C2BC', animation: 'lineFadeIn 1.4s infinite ease-in-out both', animationDelay: '0.4s' }} />
                     </div>
                   ) : (
-                    <div className="arrange-title" style={{ fontSize: '14px', color: COLORS.textSecondary, fontStyle: 'italic', lineHeight: 1.5 }}>
+                    <div style={{ 
+                      borderLeft: '2px solid #C4C2BC', 
+                      paddingLeft: '12px', 
+                      fontFamily: 'Georgia, "Songti SC", serif', 
+                      fontSize: '14px', 
+                      color: '#8A8880', 
+                      fontStyle: 'italic', 
+                      lineHeight: 1.7 
+                    }}>
                       {m.content}
                     </div>
                   )}
@@ -1240,52 +1425,59 @@ __CONFIRM__
               ) : (
                 <div style={{ 
                   display: 'inline-block', 
-                  maxWidth: '80%', 
-                  background: '#F0EEE9', 
-                  borderRadius: '12px 12px 2px 12px', 
-                  padding: '10px 14px',
-                  textAlign: 'left'
+                  textAlign: 'right',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  color: '#1C1C1A',
+                  fontFamily: 'Georgia, "Songti SC", serif',
+                  paddingBottom: '4px',
+                  borderBottom: '1px solid #D4D2CC'
                 }}>
-                  <div style={{ fontSize: '14px', color: COLORS.textPrimary, fontWeight: 500, lineHeight: 1.5 }}>
-                    {m.content}
-                  </div>
+                  {m.content}
                 </div>
               )}
             </div>
           ))}
 
           {stage === 'confirming' && parsedResult && (
-            <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', border: `1px solid ${COLORS.divider}`, marginTop: '8px' }}>
-              <div className="arrange-title" style={{ fontSize: '17px', fontWeight: 700, color: COLORS.textPrimary, marginBottom: '8px' }}>
+            <div style={{ 
+              background: '#FFFEFA', 
+              borderRadius: '0', 
+              padding: '20px 16px', 
+              border: 'none', 
+              borderTop: '2px solid #1C1C1A', 
+              margin: '4px 0 20px', 
+              boxShadow: '2px 4px 12px rgba(0,0,0,0.06)' 
+            }}>
+              <div style={{ fontFamily: 'Georgia, "Songti SC", serif', fontSize: '20px', fontWeight: 700, color: '#1C1C1A', marginBottom: '12px', letterSpacing: '0.5px' }}>
                 {parsedResult.title}
               </div>
               {parsedResult.timeDescription && (
-                <div style={{ fontSize: '12px', color: COLORS.textSecondary, fontStyle: 'italic', lineHeight: 2 }}>
-                  时间：{parsedResult.timeDescription}
+                <div style={{ fontSize: '13px', color: '#8A8880', lineHeight: 2 }}>
+                  <span style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>时间 · </span>{parsedResult.timeDescription}
                 </div>
               )}
               {parsedResult.location && (
-                <div style={{ fontSize: '12px', color: COLORS.textSecondary, fontStyle: 'italic', lineHeight: 2 }}>
-                  地点：{parsedResult.location}
+                <div style={{ fontSize: '13px', color: '#8A8880', lineHeight: 2 }}>
+                  <span style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>地点 · </span>{parsedResult.location}
                 </div>
               )}
               {parsedResult.relatedPeople && parsedResult.relatedPeople.length > 0 && (
-                <div style={{ fontSize: '12px', color: COLORS.textSecondary, fontStyle: 'italic', lineHeight: 2 }}>
-                  与：{parsedResult.relatedPeople.join('、')}
+                <div style={{ fontSize: '13px', color: '#8A8880', lineHeight: 2 }}>
+                  <span style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>与 · </span>{parsedResult.relatedPeople.join('、')}
                 </div>
               )}
               
-              <div style={{ display: 'flex', gap: '12px', marginTop: '14px' }}>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
                 <button
                   onClick={handleConfirm}
-                  className="arrange-title"
-                  style={{ flex: 1, background: COLORS.textPrimary, color: '#fff', padding: '12px', borderRadius: '8px', fontSize: '14px', border: 'none', cursor: 'pointer' }}
+                  style={{ flex: 1, background: '#1C1C1A', color: '#fff', padding: '12px 0', borderRadius: '4px', fontFamily: 'Georgia, serif', fontSize: '14px', letterSpacing: '0.5px', border: 'none', cursor: 'pointer' }}
                 >
                   就这样，记下来
                 </button>
                 <button
                   onClick={handleModify}
-                  style={{ flex: 1, background: COLORS.pageBg, color: COLORS.textSecondary, padding: '12px', borderRadius: '8px', fontSize: '14px', border: 'none', cursor: 'pointer' }}
+                  style={{ flex: 1, background: 'transparent', color: '#8A8880', padding: '12px 0', borderRadius: '4px', fontSize: '14px', fontStyle: 'italic', border: '1px solid #D4D2CC', cursor: 'pointer' }}
                 >
                   再改改
                 </button>
@@ -1298,8 +1490,9 @@ __CONFIRM__
 
         {/* 底部输入区 */}
         {stage !== 'done' && (
-          <div style={{ background: '#fff', borderTop: `1px solid ${COLORS.divider}`, padding: '12px 16px 32px', display: 'flex', alignItems: 'center' }}>
+          <div style={{ background: '#F7F5F0', borderTop: '1px solid #EAE8E2', padding: '14px 16px 28px', display: 'flex', alignItems: 'center' }}>
             <input
+              className="ai-input focus:outline-none focus:ring-0"
               type="text"
               value={inputText}
               onChange={e => setInputText(e.target.value)}
@@ -1310,13 +1503,15 @@ __CONFIRM__
               disabled={isThinking}
               style={{
                 flex: 1,
-                background: '#F7F6F2',
-                border: 'none',
-                borderRadius: '20px',
-                padding: '10px 16px',
+                background: '#FFFEFA',
+                border: '1px solid #EAE8E2',
+                borderRadius: '4px',
+                padding: '10px 14px',
                 fontSize: '15px',
-                color: COLORS.textPrimary,
-                outline: 'none'
+                fontFamily: 'Georgia, "Songti SC", serif',
+                color: '#1C1C1A',
+                outline: 'none',
+                boxShadow: 'none'
               }}
             />
             <button
@@ -1325,8 +1520,8 @@ __CONFIRM__
               style={{
                 width: '40px',
                 height: '40px',
-                borderRadius: '50%',
-                background: inputText.trim() && !isThinking ? COLORS.textPrimary : COLORS.divider,
+                borderRadius: '4px',
+                background: inputText.trim() && !isThinking ? '#1C1C1A' : '#EAE8E2',
                 color: '#fff',
                 border: 'none',
                 fontSize: '18px',
@@ -1344,20 +1539,27 @@ __CONFIRM__
           </div>
         )}
       </div>
+    </>
   );
 }
 
 // ---------------------------
 // 主页面组件
 // ---------------------------
-export default function ArrangePage() {
+interface ArrangePageProps {
+  onTeleportToSelf?: (messageId?: string) => void;
+  onTeleportToTestChat?: (conversationId: string, messageId?: string) => void;
+}
+
+export default function ArrangePage(props: ArrangePageProps) {
   const [arrangements, setArrangements] = useState<Arrangement[]>([]);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
-  const [currentView, setCurrentView] = useState<'list' | 'detail' | 'ai-create'>('list');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAICreate, setShowAICreate] = useState(false);
   const [showDoneSection, setShowDoneSection] = useState(false);
   const [showSnoozedSection, setShowSnoozedSection] = useState(false);
   const [selectedArrangement, setSelectedArrangement] = useState<Arrangement | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
 
   // Scroll states for button visibility
   const [btnVisible, setBtnVisible] = useState(true);
@@ -1379,262 +1581,289 @@ export default function ArrangePage() {
   const refreshList = () => setArrangements(getArrangements());
 
   useEffect(() => {
-    refreshList();
-  }, []);
+    const list = getArrangements();
+    if (list.length === 0) {
+      const mockContext: ArrangementContext = {
+        id: "mock-ctx-1",
+        sourceType: "self_message",
+        sourceLabel: "发给自己",
+        snippet: "后天下午记得去趟医院复查，顺便把体检报告带上。",
+        timestamp: Date.now() - 86400000,
+        conversationId: "send-to-self",
+        messageId: "msg-1"
+      };
+      const mockArrangement = createArrangement({
+        title: "去医院复查身体",
+        note: "医生交代的，带上上个月的体检报告",
+        mood: "🍀 保持心态平静",
+        source: "self_message",
+        contexts: [mockContext]
+      });
+      saveArrangements([mockArrangement]);
+      setArrangements([mockArrangement]);
+    } else {
+      setArrangements(list);
+    }
+    
+    // To prevent TS6133 "props is declared but its value is never read"
+    // Since we will use them in the next step when building the UI
+    console.log(props);
+  }, [props]);
 
   const mainList = arrangements.filter((a) => a.status === 'pending').sort((a, b) => b.createdAt - a.createdAt);
   const snoozedList = arrangements.filter((a) => a.status === 'snoozed');
   const doneList = arrangements.filter((a) => a.status === 'done' || a.status === 'auto_done');
 
   return (
-    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', minHeight: '100%', background: COLORS.pageBg }}>
+    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%', width: '100%', flex: 1, minHeight: 0, background: COLORS.pageBg, overflow: 'hidden' }}>
       <style>{fontStyle}</style>
-
-      {/* 视图路由 */}
-      {currentView === 'list' && (
-        <>
-          {/* 顶部区域 */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '20px 16px 8px 16px',
-            }}
-          >
-            <div className="arrange-summary" style={{ 
-              fontSize: '13px', 
-              color: COLORS.textSecondary, 
-              fontStyle: 'italic', 
-              padding: '20px 4px 16px'
-            }}>
-              {getTodaySummary(arrangements)}
-            </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button
-                onClick={() => setViewMode('list')}
-                style={{
-                  background: 'none',
-                  color: viewMode === 'list' ? COLORS.textPrimary : COLORS.textTertiary,
-                  fontSize: '12px',
-                  border: 'none',
-                  borderBottom: viewMode === 'list' ? `2px solid ${COLORS.textPrimary}` : '2px solid transparent',
-                  padding: '4px 0',
-                  transition: 'all 0.2s',
-                }}
-              >
-                列表
-              </button>
-              <span style={{ color: COLORS.textTertiary, fontSize: '12px' }}>·</span>
-              <button
-                onClick={() => setViewMode('calendar')}
-                style={{
-                  background: 'none',
-                  color: viewMode === 'calendar' ? COLORS.textPrimary : COLORS.textTertiary,
-                  fontSize: '12px',
-                  border: 'none',
-                  borderBottom: viewMode === 'calendar' ? `2px solid ${COLORS.textPrimary}` : '2px solid transparent',
-                  padding: '4px 0',
-                  transition: 'all 0.2s',
-                }}
-              >
-                日历
-              </button>
-            </div>
-          </div>
-
-          {/* 中间列表区域 */}
-          <div 
-            onScroll={handleScroll}
-            style={{ flex: 1, flexGrow: 1, overflowY: 'auto', padding: '0 12px', paddingBottom: viewMode === 'calendar' ? '100px' : '0', position: 'relative', background: COLORS.pageBg }}
-          >
-            {viewMode === 'calendar' ? (
-              <CalendarView
-                arrangements={arrangements}
-                year={calendarYear}
-                month={calendarMonth}
-                selectedDate={calendarSelectedDate}
-                onSelectDate={setCalendarSelectedDate}
-                onPrevMonth={() => {
-                  if (calendarMonth === 0) { setCalendarYear(y => y-1); setCalendarMonth(11) }
-                  else setCalendarMonth(m => m-1)
-                  setCalendarSelectedDate(null)
-                }}
-                onNextMonth={() => {
-                  if (calendarMonth === 11) { setCalendarYear(y => y+1); setCalendarMonth(0) }
-                  else setCalendarMonth(m => m+1)
-                  setCalendarSelectedDate(null)
-                }}
-              />
-            ) : (
-              <>
-                {/* 主列表 */}
-                {mainList.map((a) => (
-                  <ArrangementCard 
-                    key={a.id} 
-                    arrangement={a} 
-                    onRefresh={refreshList} 
-                    onClick={(arr) => { setSelectedArrangement(arr); setCurrentView('detail'); }}
-                  />
-                ))}
-
-                {/* 空状态 */}
-                {mainList.length === 0 && snoozedList.length === 0 && (
-                  <div style={{textAlign:'center', paddingTop:'60px'}}>
-                    <div style={{
-                      fontSize: '13px',
-                      color: COLORS.textTertiary,
-                      fontStyle: 'italic',
-                      lineHeight: 2,
-                      letterSpacing: '0.5px'
-                    }}>
-                      今天是一张白纸
-                      <br/>
-                      <span style={{fontSize:'11px'}}>想记什么就记什么</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* 搁置区 */}
-                {snoozedList.length > 0 && (
-                  <div style={{ marginTop: '16px' }}>
-                    <div
-                      onClick={() => setShowSnoozedSection(!showSnoozedSection)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        margin: '4px 0 4px',
-                        gap: '10px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <div style={{flex:1, height:'1px', background: COLORS.divider}} />
-                      <span className="arrange-section-label" style={{
-                        fontSize: '11px',
-                        color: COLORS.textTertiary,
-                        fontStyle: 'italic',
-                        letterSpacing: '1px',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {snoozedList.length} 件事暂且放着
-                      </span>
-                      <div style={{flex:1, height:'1px', background: COLORS.divider}} />
-                    </div>
-                    {showSnoozedSection &&
-                      snoozedList.map((a) => (
-                        <ArrangementCard 
-                          key={a.id} 
-                          arrangement={a} 
-                          onRefresh={refreshList} 
-                          onClick={(arr) => { setSelectedArrangement(arr); setCurrentView('detail'); }}
-                          readOnly 
-                        />
-                      ))}
-                  </div>
-                )}
-
-                {/* 已完成区 */}
-                {doneList.length > 0 && (
-                  <div style={{ marginTop: '16px', paddingBottom: '40px' }}>
-                    <div
-                      onClick={() => setShowDoneSection(!showDoneSection)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        margin: '4px 0 4px',
-                        gap: '10px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <div style={{flex:1, height:'1px', background: COLORS.divider}} />
-                      <span className="arrange-section-label" style={{
-                        fontSize: '11px',
-                        color: COLORS.textTertiary,
-                        fontStyle: 'italic',
-                        letterSpacing: '1px',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        已做到 {doneList.length} 件
-                      </span>
-                      <div style={{flex:1, height:'1px', background: COLORS.divider}} />
-                    </div>
-                    {showDoneSection &&
-                      doneList.map((a) => (
-                        <ArrangementCard 
-                          key={a.id} 
-                          arrangement={a} 
-                          onRefresh={refreshList} 
-                          onClick={(arr) => { setSelectedArrangement(arr); setCurrentView('detail'); }}
-                          readOnly 
-                        />
-                      ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* 底部悬浮创建按钮 */}
+      {/* 顶部区域 */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '20px 16px 8px 16px',
+        }}
+      >
+        <div className="arrange-summary" style={{ 
+          fontSize: '13px', 
+          color: COLORS.textSecondary, 
+          fontStyle: 'italic', 
+          padding: '20px 4px 16px'
+        }}>
+          {getTodaySummary(arrangements)}
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
-            onClick={() => setCurrentView('ai-create')}
+            onClick={() => setViewMode('list')}
             style={{
-              position: 'absolute',
-              bottom: '96px',
-              right: '20px',
-              width: 'auto',
-              padding: '12px 20px',
-              borderRadius: '24px',
-              background: COLORS.textPrimary,
-              color: 'white',
+              background: 'none',
+              color: viewMode === 'list' ? COLORS.textPrimary : COLORS.textTertiary,
+              fontSize: '12px',
               border: 'none',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 10,
-              opacity: btnVisible ? 1 : 0,
-              transform: btnVisible ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.92)',
-              transition: 'opacity 300ms ease, transform 300ms ease',
-              pointerEvents: btnVisible ? 'auto' : 'none'
+              borderBottom: viewMode === 'list' ? `2px solid ${COLORS.textPrimary}` : '2px solid transparent',
+              padding: '4px 0',
+              transition: 'all 0.2s',
             }}
           >
-            <span style={{fontSize:'20px', lineHeight:1}}>+</span>
-            <span style={{fontSize:'13px', marginLeft:'6px', letterSpacing:'0.5px'}}>记一件事</span>
+            列表
           </button>
-        </>
-      )}
+          <span style={{ color: COLORS.textTertiary, fontSize: '12px' }}>·</span>
+          <button
+            onClick={() => setViewMode('calendar')}
+            style={{
+              background: 'none',
+              color: viewMode === 'calendar' ? COLORS.textPrimary : COLORS.textTertiary,
+              fontSize: '12px',
+              border: 'none',
+              borderBottom: viewMode === 'calendar' ? `2px solid ${COLORS.textPrimary}` : '2px solid transparent',
+              padding: '4px 0',
+              transition: 'all 0.2s',
+            }}
+          >
+            日历
+          </button>
+        </div>
+      </div>
 
-      {currentView === 'detail' && selectedArrangement && (
-        <ArrangementDetail
-          arrangement={selectedArrangement}
-          onClose={() => { setCurrentView('list'); setSelectedArrangement(null); }}
-          onDone={(id) => { updateArrangement(id, {status:'done'}); refreshList(); setCurrentView('list'); setSelectedArrangement(null); }}
-          onSnooze={(id) => { updateArrangement(id, {status:'snoozed'}); refreshList(); setCurrentView('list'); setSelectedArrangement(null); }}
-          onDelete={(id) => { deleteArrangement(id); refreshList(); setCurrentView('list'); setSelectedArrangement(null); }}
+      {/* 中间列表区域 */}
+      <div 
+        onScroll={handleScroll}
+        style={{ flex: 1, flexGrow: 1, minHeight: 0, background: COLORS.pageBg, overflowY: 'auto', padding: '0 12px', paddingBottom: viewMode === 'calendar' ? '100px' : '0', position: 'relative' }}
+      >
+        {viewMode === 'calendar' ? (
+          <CalendarView
+            arrangements={arrangements}
+            year={calendarYear}
+            month={calendarMonth}
+            selectedDate={calendarSelectedDate}
+            onSelectDate={setCalendarSelectedDate}
+            onPrevMonth={() => {
+              if (calendarMonth === 0) { setCalendarYear(y => y-1); setCalendarMonth(11) }
+              else setCalendarMonth(m => m-1)
+              setCalendarSelectedDate(null)
+            }}
+            onNextMonth={() => {
+              if (calendarMonth === 11) { setCalendarYear(y => y+1); setCalendarMonth(0) }
+              else setCalendarMonth(m => m+1)
+              setCalendarSelectedDate(null)
+            }}
+          />
+        ) : (
+          <>
+            {/* 主列表 */}
+            {mainList.map((a) => (
+              <ArrangementCard 
+                key={a.id} 
+                arrangement={a} 
+                onRefresh={refreshList} 
+                onClick={(arr) => { setSelectedArrangement(arr); setShowDetail(true); }}
+              />
+            ))}
+
+            {/* 空状态 */}
+            {mainList.length === 0 && snoozedList.length === 0 && (
+              <div style={{textAlign:'center', paddingTop:'60px'}}>
+                <div style={{
+                  fontSize: '13px',
+                  color: COLORS.textTertiary,
+                  fontStyle: 'italic',
+                  lineHeight: 2,
+                  letterSpacing: '0.5px'
+                }}>
+                  今天是一张白纸
+                  <br/>
+                  <span style={{fontSize:'11px'}}>想记什么就记什么</span>
+                </div>
+              </div>
+            )}
+
+            {/* 搁置区 */}
+            {snoozedList.length > 0 && (
+              <div style={{ marginTop: '16px' }}>
+                <div
+                  onClick={() => setShowSnoozedSection(!showSnoozedSection)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    margin: '4px 0 4px',
+                    gap: '10px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{flex:1, height:'1px', background: COLORS.divider}} />
+                  <span className="arrange-section-label" style={{
+                    fontSize: '11px',
+                    color: COLORS.textTertiary,
+                    fontStyle: 'italic',
+                    letterSpacing: '1px',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {snoozedList.length} 件事暂且放着
+                  </span>
+                  <div style={{flex:1, height:'1px', background: COLORS.divider}} />
+                </div>
+                {showSnoozedSection &&
+                  snoozedList.map((a) => (
+                    <ArrangementCard 
+                      key={a.id} 
+                      arrangement={a} 
+                      onRefresh={refreshList} 
+                      onClick={(arr) => { setSelectedArrangement(arr); setShowDetail(true); }}
+                      readOnly 
+                    />
+                  ))}
+              </div>
+            )}
+
+            {/* 已完成区 */}
+            {doneList.length > 0 && (
+              <div style={{ marginTop: '16px', paddingBottom: '40px' }}>
+                <div
+                  onClick={() => setShowDoneSection(!showDoneSection)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    margin: '4px 0 4px',
+                    gap: '10px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{flex:1, height:'1px', background: COLORS.divider}} />
+                  <span className="arrange-section-label" style={{
+                    fontSize: '11px',
+                    color: COLORS.textTertiary,
+                    fontStyle: 'italic',
+                    letterSpacing: '1px',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    已做到 {doneList.length} 件
+                  </span>
+                  <div style={{flex:1, height:'1px', background: COLORS.divider}} />
+                </div>
+                {showDoneSection &&
+                  doneList.map((a) => (
+                    <ArrangementCard 
+                      key={a.id} 
+                      arrangement={a} 
+                      onRefresh={refreshList} 
+                      onClick={(arr) => { setSelectedArrangement(arr); setShowDetail(true); }}
+                      readOnly 
+                    />
+                  ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* 底部悬浮创建按钮 */}
+      <button
+        onClick={() => setShowAICreate(true)}
+        style={{
+          position: 'absolute',
+          bottom: '96px',
+          right: '20px',
+          width: 'auto',
+          padding: '12px 20px',
+          borderRadius: '24px',
+          background: COLORS.textPrimary,
+          color: 'white',
+          border: 'none',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          zIndex: 10,
+          opacity: btnVisible ? 1 : 0,
+          transform: btnVisible ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.92)',
+          transition: 'opacity 300ms ease, transform 300ms ease',
+          pointerEvents: btnVisible ? 'auto' : 'none'
+        }}
+      >
+        <span style={{fontSize:'20px', lineHeight:1}}>+</span>
+        <span style={{fontSize:'13px', marginLeft:'6px', letterSpacing:'0.5px'}}>记一件事</span>
+      </button>
+
+      {/* 简单的创建弹窗占位 */}
+      {viewMode === 'list' && showCreateModal && (
+        <CreateArrangementModal 
+          show={showCreateModal} 
+          onClose={() => setShowCreateModal(false)} 
+          onRefresh={refreshList} 
         />
       )}
 
-      {currentView === 'ai-create' && (
+      {showAICreate && (
         <AICreateModal
-          show={true}
-          onClose={() => setCurrentView('list')}
-          onCreated={() => { refreshList(); setTimeout(() => setCurrentView('list'), 800); }}
-          onSwitchToManual={() => { 
-            setCurrentView('list'); 
-            setTimeout(() => {
-              setShowCreateModal(true);
-            }, 300);
+          show={showAICreate}
+          onClose={() => setShowAICreate(false)}
+          onCreated={() => { refreshList(); setShowAICreate(false); }}
+          onSwitchToManual={() => { setShowAICreate(false); setTimeout(() => setShowCreateModal(true), 350); }}
+        />
+      )}
+
+      {selectedArrangement && showDetail && (
+        <ArrangementDetail
+          arrangement={selectedArrangement}
+          onClose={() => { setShowDetail(false); setTimeout(() => setSelectedArrangement(null), 300); }}
+          onDone={(id) => { updateArrangement(id, {status:'done'}); refreshList(); setShowDetail(false); setTimeout(() => setSelectedArrangement(null), 300); }}
+          onSnooze={(id) => { updateArrangement(id, {status:'snoozed'}); refreshList(); setShowDetail(false); setTimeout(() => setSelectedArrangement(null), 300); }}
+          onDelete={(id) => { deleteArrangement(id); refreshList(); setShowDetail(false); setTimeout(() => setSelectedArrangement(null), 300); }}
+          onTeleportToSelf={(msgId) => {
+            props.onTeleportToSelf?.(msgId);
+            setShowDetail(false);
+            setTimeout(() => setSelectedArrangement(null), 300);
+          }}
+          onTeleportToTestChat={(convId, msgId) => {
+            props.onTeleportToTestChat?.(convId, msgId);
+            setShowDetail(false);
+            setTimeout(() => setSelectedArrangement(null), 300);
           }}
         />
       )}
-
-      {/* 简单的创建弹窗占位 */}
-      <CreateArrangementModal 
-        show={showCreateModal} 
-        onClose={() => setShowCreateModal(false)} 
-        onRefresh={refreshList} 
-      />
     </div>
   );
 }

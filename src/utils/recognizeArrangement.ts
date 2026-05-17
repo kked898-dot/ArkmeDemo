@@ -120,11 +120,16 @@ export function saveRecognizedArrangement(
 
   const startTime = result.startTimeISO ? new Date(result.startTimeISO).getTime() : undefined
 
+  const hasReminder = result.note?.includes('提醒') || 
+                      result.timeDescription?.includes('提醒') ||
+                      result.title?.includes('提醒')
+
   const arrangement = createArrangement({
     title: result.title || '未命名安排',
     note: result.note || undefined,
-    timeType: startTime ? 'deadline' : 'none',
-    startTime,
+    timeType: hasReminder ? 'reminder' : (startTime ? 'deadline' : 'none'),
+    remindAt: hasReminder ? startTime : undefined,
+    startTime: hasReminder ? undefined : startTime,
     source: sourceType,
     contexts: [context],
     relatedPeople: result.relatedPeople || [],

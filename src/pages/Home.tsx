@@ -1121,19 +1121,29 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
     }
 
     if (settingsView === "appearance") {
-      return <AppearanceStyleScreen onBack={() => setSettingsView("settings")} />;
+      return (
+        <div className="absolute inset-0 z-[200]">
+          <AppearanceStyleScreen onBack={() => setSettingsView("settings")} />
+        </div>
+      );
     }
 
     if (settingsView === "about") {
-      return <AboutScreen onBack={() => setSettingsView(null)} />;
+      return (
+        <div className="absolute inset-0 z-[200]">
+          <AboutScreen onBack={() => setSettingsView(null)} />
+        </div>
+      );
     }
 
     if (settingsView === "settings") {
       return (
-        <SettingsScreen
-          onBack={() => setSettingsView(null)}
-          onOpenAppearance={() => setSettingsView("appearance")}
-        />
+        <div className="absolute inset-0 z-[200]">
+          <SettingsScreen
+            onBack={() => setSettingsView(null)}
+            onOpenAppearance={() => setSettingsView("appearance")}
+          />
+        </div>
       );
     }
 
@@ -1213,8 +1223,18 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
 
     if (currentPage === "arrange") {
       return (
-        <div className="flex-1 overflow-hidden">
-          <ArrangePage />
+        <div className="flex flex-1 flex-col h-full min-h-0 overflow-hidden bg-[#F2F0EB]">
+          <ArrangePage 
+            onTeleportToSelf={(msgId) => {
+              setShowSendToSelf(true);
+              if (msgId) setSendToSelfTargetUid(msgId);
+            }}
+            onTeleportToTestChat={(convId, msgId) => {
+              setShowTestConversation(true);
+              setActiveTestIdentityId(convId);
+              if (msgId) setTestConversationTargetUid(msgId);
+            }}
+          />
         </div>
       );
     }
@@ -1251,8 +1271,8 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
   return (
     <AppShell
       mainPane={
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <main className="min-h-0 flex-1 overflow-hidden">{renderMainContent()}</main>
+        <div className="relative flex min-h-0 flex-1 flex-col h-full">
+          <main className="flex flex-1 flex-col min-h-0 overflow-hidden relative">{renderMainContent()}</main>
           {!recordDetail && !showSearch && !showAnswerGuide && !showAiConversation && !showSendToSelf && !showTestConversation && !settingsView && (
             <MobileBottomNavigation currentPage={currentPage} onNavigate={onNavigate} />
           )}
