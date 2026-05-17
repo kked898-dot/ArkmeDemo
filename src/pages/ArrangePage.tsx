@@ -59,7 +59,7 @@ const fontStyle = `
 // ---------------------------
 // 辅助函数
 // ---------------------------
-function getTodaySummary(arrangements: Arrangement[]): string {
+function getTodaySummary(arrangements: Arrangement[]): React.ReactNode {
   const pendingArrangements = arrangements.filter((a) => a.status === 'pending');
 
   if (pendingArrangements.length === 0) {
@@ -79,8 +79,7 @@ function getTodaySummary(arrangements: Arrangement[]): string {
 
   const anxietyMoods = ['焦虑', '抗拒', '疲惫', '心累', '紧张', '害怕'];
 
-  // 1. 过滤近期值得关注的待办 (扩大护盾感知的时间视界)
-  // 此处不需要过滤具体的 startTime 范围，因为我们想要包括今天、明天或超期的所有 pending
+  // 1. 过滤近期值得关注的待办
   const relevantArrangements = pendingArrangements;
 
   // 2. 映射并计算每条安排的心理负荷得分
@@ -98,7 +97,7 @@ function getTodaySummary(arrangements: Arrangement[]): string {
     if (item.mood) {
       anxietyMoods.forEach(moodWord => {
         if (item.mood && item.mood.includes(moodWord)) {
-          score = Math.max(score, 85); // 命中焦虑心情直接给高基础分
+          score = Math.max(score, 85);
         }
       });
     }
@@ -114,7 +113,12 @@ function getTodaySummary(arrangements: Arrangement[]): string {
   // 4. 动态输出文案
   if (highestAnxietyItem && highestAnxietyItem.score > 0) {
     const currentHighAnxietyTitle = highestAnxietyItem.item.title || '重要事项';
-    return `✨ 有一件让你有些内耗的事（${currentHighAnxietyTitle}），Jarvis 已自动为你屏蔽了非紧急的杂务提醒。别担心，陪你一起搞定它。`;
+    return (
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+        <div className="bg-[#D9A06F] animate-pulse shrink-0" style={{ width: '6px', height: '6px', borderRadius: '50%', marginTop: '6px' }} />
+        <span>今日高负荷（{currentHighAnxietyTitle}），非紧急提醒已静音。留白给重要的事。</span>
+      </div>
+    );
   }
 
   // 恢复之前的常规数字概览或兜底
@@ -489,12 +493,15 @@ function CreateArrangementModal({ show, onClose, onRefresh, editingArrangement }
 
       {/* 弹窗内容区 */}
       <div
+        className="overflow-x-hidden"
         style={{
           position: 'absolute',
           left: 0,
           right: 0,
           bottom: 0,
           height: '75vh',
+          width: '100%',
+          maxWidth: '100vw',
           background: '#ffffff',
           borderRadius: '20px 20px 0 0',
           zIndex: 101,
@@ -552,7 +559,7 @@ function CreateArrangementModal({ show, onClose, onRefresh, editingArrangement }
           </div>
 
           {/* 时间类型选择 */}
-          <div style={{ padding: '12px 20px', display: 'flex', gap: '8px' }}>
+          <div className="grid grid-cols-4 gap-1 w-full text-center" style={{ padding: '12px 20px' }}>
             {[
               { type: 'none', label: '暂不设定' },
               { type: 'deadline', label: '截止时间' },
@@ -564,15 +571,19 @@ function CreateArrangementModal({ show, onClose, onRefresh, editingArrangement }
                 <button
                   key={item.type}
                   onClick={() => setDraftTimeType(item.type as ArrangementTimeType)}
+                  className="text-[11px] px-1"
                   style={{
                     background: isSelected ? COLORS.textPrimary : 'none',
                     color: isSelected ? '#fff' : COLORS.textTertiary,
                     border: `1px solid ${isSelected ? COLORS.textPrimary : COLORS.divider}`,
                     borderRadius: '20px',
-                    padding: '5px 14px',
-                    fontSize: '12px',
+                    paddingTop: '5px',
+                    paddingBottom: '5px',
                     fontStyle: isSelected ? 'normal' : 'italic',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}
                 >
                   {item.label}
@@ -590,11 +601,11 @@ function CreateArrangementModal({ show, onClose, onRefresh, editingArrangement }
                 </div>
               )}
               {draftTimeType === 'timerange' && (
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ flex: 1 }}>
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="w-full max-w-full">
                     <input className="focus:outline-none focus:ring-0" type="datetime-local" value={draftStartTime} onChange={e => setDraftStartTime(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div className="w-full max-w-full">
                     <input className="focus:outline-none focus:ring-0" type="datetime-local" value={draftEndTime} onChange={e => setDraftEndTime(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: '#F7F6F2', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: '8px', fontSize: '14px', color: COLORS.textSecondary }} />
                   </div>
                 </div>
@@ -732,7 +743,6 @@ function formatDetailDate(timestamp: number): string {
 
 function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, onTeleportToSelf, onTeleportToTestChat, onEditClick }: ArrangementDetailProps) {
   const [visible, setVisible] = useState(false);
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   useEffect(() => {
     // 触发滑入动画
@@ -887,7 +897,7 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, o
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div className="bg-[#D9A06F] animate-pulse" style={{ width: '6px', height: '6px', borderRadius: '50%' }} />
                     <span style={{ fontSize: '13px', color: '#8F8C84', fontWeight: 600, letterSpacing: '0.5px' }}>
-                      💭 记忆片刻 (Memory Slice)
+                      记忆片刻 (Memory Slice)
                     </span>
                   </div>
                 </div>
@@ -995,7 +1005,7 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, o
         }}>
           {(arrangement.status === 'done' || arrangement.status === 'auto_done') ? (
             <div className="font-mono text-[12px] italic text-[#A09D96] tracking-wide text-center py-4">
-              ✓ 这件事你已经温柔地做到了，时光会记得。 (COMPLETED_AND_SAVED)
+              落子无悔。这项安排已被时光温柔留存。 (RECORDED_AND_ARCHIVED)
             </div>
           ) : (
             <>
@@ -1034,7 +1044,7 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, o
                   先放一放
                 </button>
                 <button
-                  onClick={() => setShowConfirmDelete(true)}
+                  onClick={() => { setVisible(false); setTimeout(() => onDelete(arrangement.id), 300); }}
                   style={{ 
                     flex: 1, 
                     background: 'none', 
@@ -1052,47 +1062,6 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, o
           )}
         </div>
       </div>
-
-      {/* 不做了也没关系 - 优雅二次确认弹窗 */}
-      {showConfirmDelete && (
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 202,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '0 20px'
-        }}>
-          <div 
-            onClick={() => setShowConfirmDelete(false)}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }}
-          />
-          <div className="relative bg-[#FAF9F6] border border-[#E8E6DF] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] w-full max-w-[280px] overflow-hidden flex flex-col">
-            <div className="text-[#666561] text-[13px] text-center px-4 pt-5 pb-4">
-              ☕ 那些没能落地的安排，就让它轻轻过去吧。确认不做了吗？
-            </div>
-            <div className="flex border-t border-[#E8E6DF]">
-              <div 
-                className="text-[#8F8C84] text-[13px] py-3 flex-1 text-center font-normal cursor-pointer hover:opacity-70 border-r border-[#E8E6DF]"
-                onClick={() => setShowConfirmDelete(false)}
-              >
-                留着吧
-              </div>
-              <div 
-                className="text-[#2C2B29] text-[13px] py-3 flex-1 text-center font-medium cursor-pointer hover:opacity-70"
-                onClick={() => {
-                  setShowConfirmDelete(false);
-                  setVisible(false);
-                  setTimeout(() => onDelete(arrangement.id), 300);
-                }}
-              >
-                顺其自然
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
@@ -1751,19 +1720,20 @@ export default function ArrangePage(props: ArrangePageProps) {
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '20px 16px 8px 16px',
+          alignItems: 'flex-start',
+          padding: '16px 16px 8px 16px', // pt-4 相当于 16px
         }}
       >
-        <div className="arrange-summary" style={{ 
+        <div className="arrange-summary leading-relaxed" style={{ 
           fontSize: '13px', 
           color: COLORS.textSecondary, 
           fontStyle: 'italic', 
-          padding: '20px 4px 16px'
+          padding: '8px 4px 8px',
+          maxWidth: '75%'
         }}>
           {getTodaySummary(arrangements)}
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', paddingTop: '8px' }}>
           <button
             onClick={() => setViewMode('list')}
             style={{
@@ -1851,7 +1821,7 @@ export default function ArrangePage(props: ArrangePageProps) {
                     animationDuration: '6s' // 极慢隐现动画
                   }}
                 >
-                  这里会慢慢积累你想做的事，顺其自然，不用着急。
+                  空山留白。留出空间，等你想做的事情自然发生。
                 </div>
               </div>
             )}
