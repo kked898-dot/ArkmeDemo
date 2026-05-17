@@ -66,6 +66,58 @@ function getTodaySummary(arrangements: Arrangement[]): string {
     return '今天没有安排，好好休息';
   }
 
+  const ANXIETY_WEIGHTS: Record<string, number> = {
+    '扫墓': 100,
+    '祭祖': 100,
+    '医院': 90,
+    '体检': 90,
+    '复查': 85,
+    '面试': 80,
+    '考试': 75,
+    '开会': 40
+  };
+
+  const anxietyMoods = ['焦虑', '抗拒', '疲惫', '心累', '紧张', '害怕'];
+
+  // 1. 过滤近期值得关注的待办 (扩大护盾感知的时间视界)
+  // 此处不需要过滤具体的 startTime 范围，因为我们想要包括今天、明天或超期的所有 pending
+  const relevantArrangements = pendingArrangements;
+
+  // 2. 映射并计算每条安排的心理负荷得分
+  const scoredItems = relevantArrangements.map(item => {
+    let score = 0;
+    
+    // 检查标题是否命中关键词
+    Object.keys(ANXIETY_WEIGHTS).forEach(key => {
+      if (item.title && item.title.includes(key)) {
+        score = Math.max(score, ANXIETY_WEIGHTS[key]);
+      }
+    });
+    
+    // 检查心情（mood）是否命中焦虑词
+    if (item.mood) {
+      anxietyMoods.forEach(moodWord => {
+        if (item.mood && item.mood.includes(moodWord)) {
+          score = Math.max(score, 85); // 命中焦虑心情直接给高基础分
+        }
+      });
+    }
+    
+    return { item, score };
+  });
+
+  // 3. 按分值从高到低排序，分值相同按创建时间倒序
+  scoredItems.sort((a, b) => b.score - a.score || b.item.createdAt - a.item.createdAt);
+
+  const highestAnxietyItem = scoredItems.length > 0 ? scoredItems[0] : null;
+
+  // 4. 动态输出文案
+  if (highestAnxietyItem && highestAnxietyItem.score > 0) {
+    const currentHighAnxietyTitle = highestAnxietyItem.item.title || '重要事项';
+    return `✨ 有一件让你有些内耗的事（${currentHighAnxietyTitle}），Jarvis 已自动为你屏蔽了非紧急的杂务提醒。别担心，陪你一起搞定它。`;
+  }
+
+  // 恢复之前的常规数字概览或兜底
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const endOfToday = startOfToday + 24 * 60 * 60 * 1000 - 1;
@@ -311,9 +363,10 @@ interface CreateArrangementModalProps {
   show: boolean;
   onClose: () => void;
   onRefresh: () => void;
+  editingArrangement?: Arrangement | null;
 }
 
-function CreateArrangementModal({ show, onClose, onRefresh }: CreateArrangementModalProps) {
+function CreateArrangementModal({ show, onClose, onRefresh, editingArrangement }: CreateArrangementModalProps) {
   const [draftTitle, setDraftTitle] = useState('');
   const [draftNote, setDraftNote] = useState('');
   const [draftMood, setDraftMood] = useState('');
@@ -327,16 +380,39 @@ function CreateArrangementModal({ show, onClose, onRefresh }: CreateArrangementM
   
   const [titleError, setTitleError] = useState(false);
 
-  // 当弹窗打开时，自动聚焦标题输入框
+  // 当弹窗打开时，回填编辑数据或聚焦
   const titleInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (show && titleInputRef.current) {
+    if (show) {
+      if (editingArrangement) {
+        const toDatetimeLocal = (ts?: number) => {
+          if (!ts) return '';
+          const d = new Date(ts);
+          d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+          return d.toISOString().slice(0, 16);
+        };
+        
+        setDraftTitle(editingArrangement.title);
+        setDraftNote(editingArrangement.note || '');
+        setDraftMood(editingArrangement.mood || '');
+        setDraftTimeType(editingArrangement.timeType || 'none');
+        setDraftStartTime(toDatetimeLocal(editingArrangement.startTime));
+        setDraftEndTime(toDatetimeLocal(editingArrangement.endTime));
+        setDraftLocation(editingArrangement.location || '');
+        setDraftRelatedPeople(editingArrangement.relatedPeople?.join(', ') || '');
+        setDraftExecutor(editingArrangement.executor || 'user_only');
+        
+        if (editingArrangement.location || (editingArrangement.relatedPeople && editingArrangement.relatedPeople.length > 0) || editingArrangement.executor !== 'user_only') {
+          setShowExtraFields(true);
+        }
+      }
+      
       // 延迟一点聚焦，等待动画完成
       setTimeout(() => {
         titleInputRef.current?.focus();
       }, 300);
     }
-  }, [show]);
+  }, [show, editingArrangement]);
 
   const resetDraft = () => {
     setDraftTitle('');
@@ -366,7 +442,7 @@ function CreateArrangementModal({ show, onClose, onRefresh }: CreateArrangementM
       return;
     }
 
-    const newArrangement = createArrangement({
+    const updates = {
       title,
       note: draftNote || undefined,
       mood: draftMood || undefined,
@@ -375,12 +451,19 @@ function CreateArrangementModal({ show, onClose, onRefresh }: CreateArrangementM
       endTime: draftEndTime ? new Date(draftEndTime).getTime() : undefined,
       location: draftLocation || undefined,
       relatedPeople: draftRelatedPeople ? draftRelatedPeople.split(',').map(s => s.trim()).filter(Boolean) : [],
-      executor: draftExecutor,
-      source: 'manual'
-    });
+      executor: draftExecutor
+    };
 
-    const currentList = getArrangements();
-    saveArrangements([...currentList, newArrangement]);
+    if (editingArrangement) {
+      updateArrangement(editingArrangement.id, updates);
+    } else {
+      const newArrangement = createArrangement({
+        ...updates,
+        source: 'manual'
+      });
+      const currentList = getArrangements();
+      saveArrangements([...currentList, newArrangement]);
+    }
     
     onRefresh();
     handleClose();
@@ -622,6 +705,7 @@ interface ArrangementDetailProps {
   onDelete: (id: string) => void;
   onTeleportToSelf?: (messageId?: string) => void;
   onTeleportToTestChat?: (conversationId: string, messageId?: string) => void;
+  onEditClick?: () => void;
 }
 
 function formatDetailTime(timestamp: number | undefined): string {
@@ -646,7 +730,7 @@ function formatDetailDate(timestamp: number): string {
   return `${m}月${d}日`;
 }
 
-function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, onTeleportToSelf, onTeleportToTestChat }: ArrangementDetailProps) {
+function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, onTeleportToSelf, onTeleportToTestChat, onEditClick }: ArrangementDetailProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -721,7 +805,7 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, o
           <button onClick={handleClose} style={{ background: 'none', border: 'none', color: COLORS.textSecondary, fontSize: '14px', padding: 0 }}>
             ← 返回
           </button>
-          <button style={{ background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: '14px', padding: 0 }}>
+          <button onClick={onEditClick} style={{ background: 'none', border: 'none', color: COLORS.textTertiary, fontSize: '14px', padding: 0, cursor: 'pointer' }}>
             编辑
           </button>
         </div>
@@ -1560,6 +1644,7 @@ export default function ArrangePage(props: ArrangePageProps) {
   const [showDoneSection, setShowDoneSection] = useState(false);
   const [showSnoozedSection, setShowSnoozedSection] = useState(false);
   const [selectedArrangement, setSelectedArrangement] = useState<Arrangement | null>(null);
+  const [editingArrangement, setEditingArrangement] = useState<Arrangement | null>(null);
   const [showDetail, setShowDetail] = useState(false);
 
   // Scroll states for button visibility
@@ -1882,11 +1967,15 @@ export default function ArrangePage(props: ArrangePageProps) {
       )}
 
       {/* 简单的创建弹窗占位 */}
-      {viewMode === 'list' && showCreateModal && (
+      {showCreateModal && (
         <CreateArrangementModal 
           show={showCreateModal} 
-          onClose={() => setShowCreateModal(false)} 
-          onRefresh={refreshList} 
+          onClose={() => {
+            setShowCreateModal(false);
+            setTimeout(() => setEditingArrangement(null), 300);
+          }} 
+          onRefresh={refreshList}
+          editingArrangement={editingArrangement}
         />
       )}
 
@@ -1915,6 +2004,12 @@ export default function ArrangePage(props: ArrangePageProps) {
             props.onTeleportToTestChat?.(convId, msgId);
             setShowDetail(false);
             setTimeout(() => setSelectedArrangement(null), 300);
+          }}
+          onEditClick={() => {
+            setEditingArrangement(selectedArrangement);
+            setShowDetail(false);
+            setTimeout(() => setSelectedArrangement(null), 300);
+            setTimeout(() => setShowCreateModal(true), 350);
           }}
         />
       )}
