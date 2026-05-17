@@ -9,9 +9,11 @@ import Records from "@/pages/Records";
 import ArrangePage from "@/pages/ArrangePage";
 import AISettingsPage from "@/pages/AISettingsPage";
 import ArrangementRecognizeToast from "../components/ArrangementRecognizeToast";
-import { saveRecognizedArrangement, RecognizeResult } from "../utils/recognizeArrangement";
-import { aiConversationLogEntries } from "@/data/aiConversationLog";
+import { saveRecognizedArrangement, recognizeArrangementFromMessage } from "../utils/recognizeArrangement";
+import { getAISettings } from "../data/aiSettings";
+import { aiConversationLogEntries as rawAiConversationLogEntries } from "@/data/aiConversationLog";
 import { useCandidateProfile } from "@/data/candidateProfile";
+import type { RecognizeResult } from "../utils/recognizeArrangement";
 import {
   createTestReplyMessage,
   demoSenderIdentityId,
@@ -70,8 +72,22 @@ const aiConversationReadCountStorageKey = "arkme-demo.aiConversationReadCount";
 const browserNotificationPromptedStorageKey = "arkme-demo.browserNotificationPrompted";
 const createdSelfRecordsStorageKey = "arkme-demo.selfRecords";
 const searchHistoryStorageKey = "arkme-demo.searchHistory";
-const aiConversationTotalCount = aiConversationLogEntries.length;
 const maxSearchHistoryCount = 4;
+
+function useAiConversationLog() {
+  const [entries, setEntries] = React.useState(rawAiConversationLogEntries);
+  
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      if (rawAiConversationLogEntries.length !== entries.length) {
+        setEntries([...rawAiConversationLogEntries]);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [entries.length]);
+  
+  return entries;
+}
 
 type QuickSearchType = "image" | "audio" | "link" | "file" | "longArticle" | "contact";
 
@@ -119,18 +135,18 @@ const quickSearchTypes: QuickSearchType[] = [
   "contact",
 ];
 
-function getInitialAiConversationReadCount() {
+function getInitialAiConversationReadCount(totalCount: number) {
   if (typeof window === "undefined") {
-    return aiConversationTotalCount;
+    return totalCount;
   }
 
   const storedValue = window.localStorage.getItem(aiConversationReadCountStorageKey);
   if (storedValue === null) {
     window.localStorage.setItem(
       aiConversationReadCountStorageKey,
-      String(aiConversationTotalCount)
+      String(totalCount)
     );
-    return aiConversationTotalCount;
+    return totalCount;
   }
 
   const parsedValue = Number(storedValue);
@@ -138,7 +154,7 @@ function getInitialAiConversationReadCount() {
     return 0;
   }
 
-  return Math.min(Math.max(0, parsedValue), aiConversationTotalCount);
+  return Math.min(Math.max(0, parsedValue), totalCount);
 }
 
 function normalizeStoredSelfRecord(value: unknown): RecordItem | null {
@@ -334,6 +350,7 @@ function shouldRequestBrowserNotificationPermission() {
 
 export default function Home({ currentPage, onNavigate }: HomeProps) {
   const { t } = usePreferences();
+  const aiConversationLogEntries = useAiConversationLog();
   const [showSearch, setShowSearch] = React.useState(false);
   const [showMenu, setShowMenu] = React.useState(false);
   const [showAnswerGuide, setShowAnswerGuide] = React.useState(false);
@@ -347,6 +364,7 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
   const [sendToSelfTargetUid, setSendToSelfTargetUid] = React.useState<string | null>(null);
   const [activeTestIdentityId, setActiveTestIdentityId] = React.useState<string | null>(null);
   const [testConversationTargetUid, setTestConversationTargetUid] = React.useState<string | null>(null);
+  const [highlightMessageId, setHighlightMessageId] = React.useState<string | null>(null);
   const [settingsView, setSettingsView] = React.useState<null | "settings" | "appearance" | "about">(
     null
   );
@@ -355,24 +373,25 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
   const [recordDetail, setRecordDetail] = React.useState<RecordItem | null>(null);
   const [recordSnapshot, setRecordSnapshot] = React.useState<RecordItem | null>(null);
   const [lastReadAiConversationCount, setLastReadAiConversationCount] =
-    React.useState(getInitialAiConversationReadCount);
+    React.useState(() => getInitialAiConversationReadCount(rawAiConversationLogEntries.length));
   const recordsDemoBaseTime = React.useMemo(() => Date.now(), []);
   const selfDemoBaseTime = React.useMemo(() => Date.now(), []);
   const [createdSelfRecords, setCreatedSelfRecords] = React.useState(
     getInitialCreatedSelfRecords
   );
   const [recognizeToast, setRecognizeToast] = React.useState<{
-    result: RecognizeResult
-    originalMessage: string
+    result: RecognizeResult;
+    originalMessage: string;
+    messageId?: string;
   } | null>(null);
 
   React.useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      setRecognizeToast({ result: detail.result, originalMessage: detail.originalMessage });
+    const handleRecognized = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setRecognizeToast(customEvent.detail);
     };
-    window.addEventListener('arrangement-recognized', handler);
-    return () => window.removeEventListener('arrangement-recognized', handler);
+    window.addEventListener('arrangement-recognized', handleRecognized);
+    return () => window.removeEventListener('arrangement-recognized', handleRecognized);
   }, []);
 
   const [testIdentities, setTestIdentities] = React.useState(getInitialTestIdentities);
@@ -385,7 +404,7 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
 
   const unreadAiConversationCount = Math.max(
     0,
-    aiConversationTotalCount - lastReadAiConversationCount
+    aiConversationLogEntries.length - lastReadAiConversationCount
   );
 
   React.useEffect(() => {
@@ -419,14 +438,14 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
   }, []);
 
   const markAiConversationAsRead = React.useCallback(() => {
-    setLastReadAiConversationCount(aiConversationTotalCount);
+    setLastReadAiConversationCount(aiConversationLogEntries.length);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(
         aiConversationReadCountStorageKey,
-        String(aiConversationTotalCount)
+        String(aiConversationLogEntries.length)
       );
     }
-  }, []);
+  }, [aiConversationLogEntries.length]);
 
   const makeSelfSource = React.useCallback(
     (recordUid: string): RecordSourceConversation => ({
@@ -505,7 +524,7 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
           },
         };
       }),
-    [recordsDemoBaseTime, t]
+    [recordsDemoBaseTime, t, aiConversationLogEntries]
   );
 
   const selfDemoRecords = React.useMemo<RecordItem[]>(
@@ -778,11 +797,12 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
 
   const createSelfRecord = React.useCallback((content: string) => {
     const timestamp = Date.now();
+    const newUid = `self-${timestamp}`;
     setCreatedSelfRecords((prev) => {
       const nextRecords = [
         ...prev,
         {
-          uid: `self-${timestamp}`,
+          uid: newUid,
           text_content: content,
           send_at: timestamp,
           create_at: timestamp,
@@ -794,22 +814,28 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
     });
 
     // 异步识别，不阻塞发送流程
-    const triggerRecognize = async (text: string) => {
-      const { getAISettings } = await import('../data/aiSettings');
+    const triggerRecognize = async (text: string, uid: string) => {
       const settings = getAISettings();
-      if (!settings.isEnabled || !settings.apiKey) return;
+      console.log('[Home] 触发AI识别，当前设置:', settings)
+      if (!settings.isEnabled || !settings.apiKey) {
+        console.log('[Home] AI未启用或无API Key，跳过识别')
+        return;
+      }
       
-      const { recognizeArrangementFromMessage } = await import('../utils/recognizeArrangement');
       const result = await recognizeArrangementFromMessage(text, '发给自己', 'self_message');
+      console.log('[Home] AI识别完成，解析结果:', result)
       
       if (result.hasArrangement && result.confidence !== 'low') {
+        console.log('[Home] 满足弹窗条件，正在派发 arrangement-recognized 事件')
         // 触发显示确认Toast的事件
         window.dispatchEvent(new CustomEvent('arrangement-recognized', {
-          detail: { result, originalMessage: text }
+          detail: { result, originalMessage: text, messageId: uid }
         }));
+      } else {
+        console.log('[Home] 不满足弹窗条件（无安排或置信度过低）')
       }
     };
-    triggerRecognize(content);
+    triggerRecognize(content, newUid);
   }, []);
 
   const createRecordExtension = React.useCallback((parentRecord: RecordItem, content: string) => {
@@ -1163,6 +1189,7 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
         <SendToSelfConversationChat
           records={selfRecords}
           targetUid={sendToSelfTargetUid}
+          highlightMessageId={highlightMessageId}
           onBack={handleConversationBack}
           onCreateRecord={createSelfRecord}
           onOpenRecordDetail={setRecordDetail}
@@ -1227,7 +1254,11 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
           <ArrangePage 
             onTeleportToSelf={(msgId) => {
               setShowSendToSelf(true);
-              if (msgId) setSendToSelfTargetUid(msgId);
+              if (msgId) {
+                setSendToSelfTargetUid(msgId);
+                setHighlightMessageId(msgId);
+                setTimeout(() => setHighlightMessageId(null), 2000);
+              }
             }}
             onTeleportToTestChat={(convId, msgId) => {
               setShowTestConversation(true);
@@ -1310,7 +1341,8 @@ export default function Home({ currentPage, onNavigate }: HomeProps) {
                   recognizeToast.result,
                   recognizeToast.originalMessage,
                   '发给自己',
-                  'self_message'
+                  'self_message',
+                  recognizeToast.messageId
                 )
                 setRecognizeToast(null)
               }}
@@ -1908,6 +1940,7 @@ function MobileSideDrawer({
   testConversations: TestConversationSummary[];
 }) {
   const { t } = usePreferences();
+  const aiConversationLogEntries = useAiConversationLog();
   const latestSelfRecord = React.useMemo(
     () => getLatestRecord(selfRecords),
     [selfRecords]
@@ -2116,6 +2149,7 @@ function AiToolConversationItem({
   latestAt: number;
 }) {
   const { t } = usePreferences();
+  const aiConversationLogEntries = useAiConversationLog();
   const latestEntry = aiConversationLogEntries.at(-1);
 
   return (
@@ -2217,6 +2251,7 @@ function AiToolConversationChat({
   onOpenRecordSnapshot: (record: RecordItem) => void;
 }) {
   const { t } = usePreferences();
+  const aiConversationLogEntries = useAiConversationLog();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const entryRefs = React.useRef<Array<HTMLElement | null>>([]);
   const fallbackBaseTime = React.useMemo(() => Date.now(), []);
@@ -2391,6 +2426,7 @@ function AiToolConversationChat({
 function SendToSelfConversationChat({
   records,
   targetUid,
+  highlightMessageId,
   onBack,
   onCreateRecord,
   onOpenRecordDetail,
@@ -2398,6 +2434,7 @@ function SendToSelfConversationChat({
 }: {
   records: RecordItem[];
   targetUid?: string | null;
+  highlightMessageId?: string | null;
   onBack: () => void;
   onCreateRecord: (content: string) => void;
   onOpenRecordDetail: (record: RecordItem) => void;
@@ -2444,6 +2481,7 @@ function SendToSelfConversationChat({
         loading={false}
         onLoadMore={() => undefined}
         targetRecordUid={targetUid}
+        highlightMessageId={highlightMessageId}
         onOpenRecordDetail={onOpenRecordDetail}
         onOpenRecordSnapshot={onOpenRecordSnapshot}
       />

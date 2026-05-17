@@ -803,103 +803,103 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, o
 
           {/* ⑤ 关联上下文区域 */}
           {arrangement.contexts && arrangement.contexts.length > 0 && (
-            <div style={{ marginTop: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', margin: '4px 20px 16px', gap: '10px' }}>
-                <div style={{flex:1, height:'1px', background: COLORS.divider}} />
-                <span className="arrange-section-label" style={{ fontSize: '11px', color: COLORS.textTertiary, letterSpacing: '1px' }}>相关对话</span>
-                <div style={{flex:1, height:'1px', background: COLORS.divider}} />
-              </div>
-              
-              {arrangement.contexts.map((ctx, idx) => {
-                const isSelf = ctx.sourceType === 'self_message';
+            <div style={{ marginTop: '32px', padding: '0 20px', paddingBottom: '16px' }}>
+              <div className="border-t border-dashed border-[#E4E1DA]" style={{ paddingTop: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="bg-[#D9A06F] animate-pulse" style={{ width: '6px', height: '6px', borderRadius: '50%' }} />
+                    <span style={{ fontSize: '13px', color: '#8F8C84', fontWeight: 600, letterSpacing: '0.5px' }}>
+                      💭 记忆片刻 (Memory Slice)
+                    </span>
+                  </div>
+                </div>
                 
-                return (
-                  <div key={idx} style={{ padding: '0 20px', marginBottom: '16px' }}>
-                    <div style={{ 
-                      background: '#F9F8F6', 
-                      borderRadius: '12px', 
-                      padding: '16px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                      position: 'relative'
+                {arrangement.contexts.map((ctx, idx) => {
+                  const isSelf = ctx.sourceType === 'self_message';
+                  const showTeleport = ((ctx.sourceType === 'self_message' && ctx.sourceLabel !== 'AI对话创建') || 
+                                       ctx.sourceType === 'private_chat' || 
+                                       ctx.sourceType === 'group_chat');
+                  
+                  // 复古打字机时间格式：MAY 17, 17:59:12
+                  const d = new Date(ctx.timestamp || Date.now());
+                  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                  const retroTime = `${months[d.getMonth()]} ${d.getDate()}, ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+                  
+                  return (
+                    <div key={idx} className="rotate-[-0.8deg] shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-[#FAF9F6] border border-[#E8E6DF] rounded-xl" style={{ 
+                      padding: '16px 16px 24px 16px',
+                      position: 'relative',
+                      marginBottom: '24px'
                     }}>
-                      <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                        {/* 头像 */}
+                      {/* 聊天气泡区域 */}
+                      <div style={{ display: 'flex', gap: '12px', maxWidth: '85%', marginBottom: '24px' }}>
+                        {/* 圆形头像 */}
                         <div style={{ 
-                          width: '36px', 
-                          height: '36px', 
-                          borderRadius: '8px', 
-                          background: isSelf ? '#1C1C1A' : '#E8E6E0', 
-                          color: isSelf ? '#fff' : COLORS.textPrimary,
+                          width: '32px', 
+                          height: '32px', 
+                          borderRadius: '50%', 
+                          background: '#E8E6E0', 
+                          color: '#666',
                           display: 'flex', 
                           alignItems: 'center', 
                           justifyContent: 'center',
-                          fontSize: '14px',
+                          fontSize: '13px',
                           fontWeight: 600,
-                          flexShrink: 0
+                          flexShrink: 0,
+                          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
                         }}>
                           {isSelf ? '我' : (ctx.sourceLabel?.charAt(0) || '他')}
                         </div>
                         
                         {/* 气泡内容 */}
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '12px', color: COLORS.textTertiary, marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>{ctx.sourceLabel}</span>
-                          </div>
-                          <div style={{ 
-                            background: isSelf ? '#EAE8E2' : '#fff', 
-                            padding: '10px 14px', 
-                            borderRadius: isSelf ? '2px 12px 12px 12px' : '2px 12px 12px 12px',
-                            fontSize: '14px', 
-                            color: COLORS.textPrimary, 
-                            lineHeight: 1.6,
-                            display: 'inline-block',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                          }}>
-                            {ctx.snippet}
-                          </div>
+                        <div className="bg-[#EEEDE9] text-[#333] leading-relaxed text-[13px]" style={{ 
+                          padding: '12px 14px',
+                          borderRadius: '2px 16px 16px 16px', // rounded-tl-sm
+                        }}>
+                          {ctx.snippet}
                         </div>
                       </div>
                       
-                      {/* 传送按钮 */}
-                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <button
-                          onClick={() => {
-                            if (isSelf) {
-                              onTeleportToSelf?.(ctx.messageId);
-                            } else {
-                              if (ctx.conversationId) {
-                                onTeleportToTestChat?.(ctx.conversationId, ctx.messageId);
-                              }
-                            }
-                            // 关闭当前弹窗
-                            handleClose();
-                          }}
-                          style={{
-                            background: '#1C1C1A',
-                            color: '#fff',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '16px',
-                            fontSize: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            cursor: 'pointer',
-                            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                            transition: 'transform 0.2s',
-                          }}
-                          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.96)'}
-                          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-                          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                        >
-                          <span style={{ fontSize: '14px' }}>↩</span>
-                          回到现场
-                        </button>
+                      {/* 卡片底部宽留白区（元数据） */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="font-mono text-[10px] text-[#A09D96]">
+                          记录于此 (RECORDED_IN)
+                        </div>
+                        <div className="font-mono text-[10px] text-[#A09D96]">
+                          {retroTime}
+                        </div>
                       </div>
+                      
+                      {/* 复古徽章传送按钮 */}
+                      {showTeleport && (
+                        <div className="group absolute right-4 bottom-4 flex flex-col items-center">
+                          <button
+                            className="w-8 h-8 rounded-full border-2 border-[#D1CEC8] bg-transparent flex items-center justify-center cursor-pointer transition-transform duration-300 hover:rotate-[18deg]"
+                            onClick={() => {
+                              if (isSelf) {
+                                onTeleportToSelf?.(ctx.messageId);
+                              } else {
+                                if (ctx.conversationId) {
+                                  onTeleportToTestChat?.(ctx.conversationId, ctx.messageId);
+                                }
+                              }
+                              handleClose();
+                            }}
+                          >
+                            {/* 复古样式回形针图标 */}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A09D96" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                          </button>
+                          <div className="absolute bottom-[-20px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-serif text-[10px] italic text-[#B4B1AB] whitespace-nowrap pointer-events-none">
+                            陪你回到现场...
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -1392,7 +1392,7 @@ __CONFIRM__
             </button>
           </div>
           <div style={{ fontSize: '11px', color: '#C4C2BC', fontStyle: 'italic', textAlign: 'center', padding: '6px 0 10px' }}>
-            用自然语言说就好，AI 会帮你整理
+            随便说，我来整理
           </div>
         </div>
 
@@ -1556,6 +1556,7 @@ export default function ArrangePage(props: ArrangePageProps) {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAICreate, setShowAICreate] = useState(false);
+  const [showCreatePicker, setShowCreatePicker] = useState(false);
   const [showDoneSection, setShowDoneSection] = useState(false);
   const [showSnoozedSection, setShowSnoozedSection] = useState(false);
   const [selectedArrangement, setSelectedArrangement] = useState<Arrangement | null>(null);
@@ -1584,14 +1585,14 @@ export default function ArrangePage(props: ArrangePageProps) {
     const list = getArrangements();
     if (list.length === 0) {
       const mockContext: ArrangementContext = {
-        id: "mock-ctx-1",
-        sourceType: "self_message",
-        sourceLabel: "发给自己",
-        snippet: "后天下午记得去趟医院复查，顺便把体检报告带上。",
-        timestamp: Date.now() - 86400000,
-        conversationId: "send-to-self",
-        messageId: "msg-1"
-      };
+              id: "mock-ctx-1",
+              sourceType: "self_message",
+              sourceLabel: "发给自己",
+              snippet: "后天下午记得去趟医院复查，顺便把体检报告带上。",
+              timestamp: Date.now() - 86400000,
+              conversationId: "send-to-self",
+              messageId: "self-demo-2"
+            };
       const mockArrangement = createArrangement({
         title: "去医院复查身体",
         note: "医生交代的，带上上个月的体检报告",
@@ -1800,13 +1801,13 @@ export default function ArrangePage(props: ArrangePageProps) {
 
       {/* 底部悬浮创建按钮 */}
       <button
-        onClick={() => setShowAICreate(true)}
+        onClick={() => setShowCreatePicker(true)}
         style={{
           position: 'absolute',
-          bottom: '96px',
-          right: '20px',
+          bottom: '72px',
+          right: '16px',
           width: 'auto',
-          padding: '12px 20px',
+          padding: '10px 18px',
           borderRadius: '24px',
           background: COLORS.textPrimary,
           color: 'white',
@@ -1826,6 +1827,59 @@ export default function ArrangePage(props: ArrangePageProps) {
         <span style={{fontSize:'20px', lineHeight:1}}>+</span>
         <span style={{fontSize:'13px', marginLeft:'6px', letterSpacing:'0.5px'}}>记一件事</span>
       </button>
+
+      {/* 选择创建方式弹窗 */}
+      {showCreatePicker && (
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          background: 'rgba(0,0,0,0.3)', top: 0, zIndex: 200
+        }} onClick={() => setShowCreatePicker(false)}>
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            background: '#FAFAF8',
+            borderRadius: '20px 20px 0 0',
+            padding: '24px 20px 40px'
+          }} onClick={e => e.stopPropagation()}>
+            
+            <div style={{
+              fontSize: '13px', color: '#C4C2BC',
+              fontStyle: 'italic', textAlign: 'center',
+              marginBottom: '20px',
+              fontFamily: 'Georgia, serif'
+            }}>
+              用哪种方式记？
+            </div>
+            
+            <button onClick={() => {
+              setShowCreatePicker(false);
+              setTimeout(() => setShowAICreate(true), 100);
+            }} style={{
+              width: '100%', padding: '16px',
+              background: '#1C1C1A', color: '#fff',
+              border: 'none', borderRadius: '10px',
+              fontSize: '15px', marginBottom: '10px',
+              fontFamily: 'Georgia, serif',
+              cursor: 'pointer'
+            }}>
+              和 AI 说说
+            </button>
+            
+            <button onClick={() => {
+              setShowCreatePicker(false);
+              setTimeout(() => setShowCreateModal(true), 100);
+            }} style={{
+              width: '100%', padding: '16px',
+              background: '#F0EEE9', color: '#8A8880',
+              border: 'none', borderRadius: '10px',
+              fontSize: '15px', fontStyle: 'italic',
+              cursor: 'pointer'
+            }}>
+              自己填写
+            </button>
+            
+          </div>
+        </div>
+      )}
 
       {/* 简单的创建弹窗占位 */}
       {viewMode === 'list' && showCreateModal && (

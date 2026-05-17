@@ -25,6 +25,7 @@ type ChatBubbleProps = {
     iconLabel: string;
     onClick: () => void;
   };
+  isHighlighted?: boolean;
 };
 
 type ActionMenuPlacement = "above" | "below";
@@ -46,6 +47,7 @@ export default function ChatBubble({
   onOpenMemorySnapshot,
   reference,
   source,
+  isHighlighted,
 }: ChatBubbleProps) {
   const { t } = usePreferences();
   const candidateProfile = useCandidateProfile();
@@ -266,6 +268,12 @@ export default function ChatBubble({
               : "border border-[var(--record-card-border)] bg-[var(--record-card-bg)] text-text transition-[background-color,box-shadow] duration-[var(--duration)] hover:bg-[var(--record-card-hover-bg)]",
             onOpenDetail && "cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           )}
+          style={isHighlighted ? {
+            border: '2px solid #1C1C1A',
+            boxShadow: '0 0 0 4px rgba(28,28,26,0.08)',
+            transition: 'all 300ms ease',
+            animation: 'highlightPulse 1s ease 2'
+          } : undefined}
         >
           {hasText && (
             <p

@@ -54,8 +54,13 @@ export function saveAISettings(settings: AISettings): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
 }
 
-// 统一的AI调用接口，兼容OpenAI格式（大多数服务商都兼容）
-export async function callAI(settings: AISettings, messages: { role: string; content: string }[], systemPrompt?: string): Promise<string> {
+// 发起 AI 请求（支持多轮对话格式）
+export async function callAI(
+  settings: AISettings,
+  messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
+  systemPrompt?: string,
+  options?: { max_tokens?: number }
+): Promise<string> {
   if (!settings.apiKey.trim()) throw new Error('未配置 API Key')
   if (!settings.model.trim()) throw new Error('未配置模型名称')
   if (!settings.isEnabled) throw new Error('AI 识别未启用')
@@ -73,16 +78,24 @@ export async function callAI(settings: AISettings, messages: { role: string; con
       },
       body: JSON.stringify({
         model: settings.model,
-        max_tokens: 1000,
+        max_tokens: options?.max_tokens || 1000,
         system: systemPrompt || '',
         messages: messages.map(m => ({ role: m.role, content: m.content }))
       })
     })
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err?.error?.message || `请求失败 ${res.status}`)
+      const errText = await res.text().catch(() => '')
+      let err
+      try { err = JSON.parse(errText) } catch { /* ignore */ }
+      throw new Error(err?.error?.message || `请求失败 ${res.status}: ${errText}`)
     }
-    const data = await res.json()
+    const text = await res.text()
+    let data
+    try {
+      data = JSON.parse(text)
+    } catch (e) {
+      throw new Error(`Anthropic API 返回了无效的 JSON: ${text}`)
+    }
     return data.content?.[0]?.text || ''
   }
 
@@ -93,8 +106,8 @@ export async function callAI(settings: AISettings, messages: { role: string; con
     messages: systemPrompt
       ? [{ role: 'system', content: systemPrompt }, ...messages]
       : messages,
-    max_tokens: 1000,
-    temperature: 0.3
+    max_tokens: options?.max_tokens || 1000,
+    temperature: 0
   }
 
   const res = await fetch(endpoint, {
@@ -107,12 +120,31 @@ export async function callAI(settings: AISettings, messages: { role: string; con
   })
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message || `请求失败 ${res.status}`)
+    const errText = await res.text().catch(() => '')
+    let err
+    try { err = JSON.parse(errText) } catch { /* ignore */ }
+    throw new Error(err?.error?.message || `请求失败 ${res.status}: ${errText}`)
   }
 
-  const data = await res.json()
-  return data.choices?.[0]?.message?.content || ''
+  const text = await res.text()
+  let data
+  try {
+    data = JSON.parse(text)
+  } catch (e) {
+    throw new Error(`API 返回了无效的 JSON: ${text}`)
+  }
+  console.log('[callAI] API 完整解析结果:', data)
+  
+  // 尝试提取标准 content，如果为空但存在 reasoning_content（部分国产推理模型特性），则使用 reasoning_content
+  let content = data.choices?.[0]?.message?.content || data.choices?.[0]?.text || ''
+  if (!content && data.choices?.[0]?.message?.reasoning_content) {
+    content = data.choices[0].message.reasoning_content
+  }
+  
+  if (!content) {
+    console.warn('[callAI] 警告：未能从返回体中提取到 content。返回内容为:', text)
+  }
+  return content
 }
 
 // 测试连接：发一条最简单的消息验证

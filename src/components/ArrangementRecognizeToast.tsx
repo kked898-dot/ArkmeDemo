@@ -23,14 +23,16 @@ export default function ArrangementRecognizeToast({ result, originalMessage, onC
 
   return (
     <div style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 500,
+      position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 300,
       transform: visible ? 'translateY(0)' : 'translateY(100%)',
       transition: 'transform 300ms ease'
     }}>
       <div style={{
-        background: '#fff',
+        background: '#FAFAF8',
         borderRadius: '16px 16px 0 0',
-        padding: '20px 16px 36px',
+        padding: '20px 16px 32px',
+        width: '100%',
+        boxSizing: 'border-box',
         boxShadow: '0 -4px 24px rgba(0,0,0,0.08)'
       }}>
         {/* 提示文案 */}

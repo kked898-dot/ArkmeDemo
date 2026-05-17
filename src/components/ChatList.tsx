@@ -14,6 +14,7 @@ type ChatListProps = {
   onOpenRecordDetail?: (record: RecordItem) => void;
   onOpenRecordSnapshot?: (record: RecordItem) => void;
   targetRecordUid?: string | null;
+  highlightMessageId?: string | null;
 };
 
 // 获取交错动画延迟类名
@@ -31,6 +32,7 @@ export default function ChatList({
   onOpenRecordDetail,
   onOpenRecordSnapshot,
   targetRecordUid,
+  highlightMessageId,
 }: ChatListProps) {
   const { resolvedLocale, t } = usePreferences();
   const topRef = useRef<HTMLDivElement>(null);
@@ -128,6 +130,8 @@ export default function ChatList({
       const staggerClass = isNew && indexInBatch >= 0 ? getStaggerClass(indexInBatch) : "";
       const referencedRecord = record.referencedRecord;
 
+      const isHighlighted = highlightMessageId && record.uid === highlightMessageId;
+
       elements.push(
         <div
           key={record.uid}
@@ -148,6 +152,7 @@ export default function ChatList({
             textContent={record.text_content}
             animationDelay={staggerClass}
             disableAnimation={!isNew}
+            isHighlighted={!!isHighlighted}
             onOpenDetail={
               onOpenRecordDetail ? () => onOpenRecordDetail(record) : undefined
             }
@@ -194,6 +199,13 @@ export default function ChatList({
         flexDirection: "column",
       }}
     >
+      <style>{`
+        @keyframes highlightPulse {
+          0% { box-shadow: 0 0 0 0 rgba(28,28,26,0.2) }
+          50% { box-shadow: 0 0 0 8px rgba(28,28,26,0.05) }
+          100% { box-shadow: 0 0 0 0 rgba(28,28,26,0) }
+        }
+      `}</style>
       {/* 顶部加载更多指示器 */}
       <div ref={topRef} className="flex-shrink-0">
         {loading && (
