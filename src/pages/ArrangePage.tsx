@@ -732,6 +732,7 @@ function formatDetailDate(timestamp: number): string {
 
 function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, onTeleportToSelf, onTeleportToTestChat, onEditClick }: ArrangementDetailProps) {
   const [visible, setVisible] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   useEffect(() => {
     // 触发滑入动画
@@ -741,13 +742,6 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, o
   const handleClose = () => {
     setVisible(false);
     setTimeout(onClose, 300);
-  };
-
-  const handleDelete = () => {
-    if (window.confirm("这件事就这样了，确认不做了吗？")) {
-      setVisible(false);
-      setTimeout(() => onDelete(arrangement.id), 300);
-    }
   };
 
   const executorText = {
@@ -999,57 +993,106 @@ function ArrangementDetail({ arrangement, onClose, onDone, onSnooze, onDelete, o
           padding: '16px 20px 36px', 
           borderTop: `1px solid ${COLORS.divider}` 
         }}>
-          <button
-            onClick={() => { setVisible(false); setTimeout(() => onDone(arrangement.id), 300); }}
-            className="arrange-title"
-            style={{ 
-              width: '100%', 
-              background: COLORS.textPrimary, 
-              color: '#fff', 
-              border: 'none', 
-              borderRadius: '10px', 
-              padding: '15px', 
-              fontSize: '15px', 
-              fontWeight: 500,
-              cursor: 'pointer'
-            }}
-          >
-            做到了
-          </button>
-          
-          <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-            <button
-              onClick={() => { setVisible(false); setTimeout(() => onSnooze(arrangement.id), 300); }}
-              style={{ 
-                flex: 1, 
-                background: '#F0EEE9', 
-                color: COLORS.textSecondary, 
-                border: 'none', 
-                borderRadius: '10px', 
-                padding: '12px', 
-                fontSize: '14px',
-                cursor: 'pointer'
-              }}
-            >
-              先放一放
-            </button>
-            <button
-              onClick={handleDelete}
-              style={{ 
-                flex: 1, 
-                background: 'none', 
-                border: 'none', 
-                color: COLORS.textTertiary, 
-                fontSize: '13px', 
-                fontStyle: 'italic',
-                cursor: 'pointer'
-              }}
-            >
-              不做了也没关系
-            </button>
-          </div>
+          {(arrangement.status === 'done' || arrangement.status === 'auto_done') ? (
+            <div className="font-mono text-[12px] italic text-[#A09D96] tracking-wide text-center py-4">
+              ✓ 这件事你已经温柔地做到了，时光会记得。 (COMPLETED_AND_SAVED)
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => { setVisible(false); setTimeout(() => onDone(arrangement.id), 300); }}
+                className="arrange-title"
+                style={{ 
+                  width: '100%', 
+                  background: COLORS.textPrimary, 
+                  color: '#fff', 
+                  border: 'none', 
+                  borderRadius: '10px', 
+                  padding: '15px', 
+                  fontSize: '15px', 
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}
+              >
+                做到了
+              </button>
+              
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button
+                  onClick={() => { setVisible(false); setTimeout(() => onSnooze(arrangement.id), 300); }}
+                  style={{ 
+                    flex: 1, 
+                    background: '#F0EEE9', 
+                    color: COLORS.textSecondary, 
+                    border: 'none', 
+                    borderRadius: '10px', 
+                    padding: '12px', 
+                    fontSize: '14px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  先放一放
+                </button>
+                <button
+                  onClick={() => setShowConfirmDelete(true)}
+                  style={{ 
+                    flex: 1, 
+                    background: 'none', 
+                    border: 'none', 
+                    color: COLORS.textTertiary, 
+                    fontSize: '13px', 
+                    fontStyle: 'italic',
+                    cursor: 'pointer'
+                  }}
+                >
+                  不做了也没关系
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {/* 不做了也没关系 - 优雅二次确认弹窗 */}
+      {showConfirmDelete && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 202,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 20px'
+        }}>
+          <div 
+            onClick={() => setShowConfirmDelete(false)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }}
+          />
+          <div className="relative bg-[#FAF9F6] border border-[#E8E6DF] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] w-full max-w-[280px] overflow-hidden flex flex-col">
+            <div className="text-[#666561] text-[13px] text-center px-4 pt-5 pb-4">
+              ☕ 那些没能落地的安排，就让它轻轻过去吧。确认不做了吗？
+            </div>
+            <div className="flex border-t border-[#E8E6DF]">
+              <div 
+                className="text-[#8F8C84] text-[13px] py-3 flex-1 text-center font-normal cursor-pointer hover:opacity-70 border-r border-[#E8E6DF]"
+                onClick={() => setShowConfirmDelete(false)}
+              >
+                留着吧
+              </div>
+              <div 
+                className="text-[#2C2B29] text-[13px] py-3 flex-1 text-center font-medium cursor-pointer hover:opacity-70"
+                onClick={() => {
+                  setShowConfirmDelete(false);
+                  setVisible(false);
+                  setTimeout(() => onDelete(arrangement.id), 300);
+                }}
+              >
+                顺其自然
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1788,19 +1831,27 @@ export default function ArrangePage(props: ArrangePageProps) {
               />
             ))}
 
-            {/* 空状态 */}
+            {/* 空状态：呼吸留白 (Zen Emptiness) */}
             {mainList.length === 0 && snoozedList.length === 0 && (
-              <div style={{textAlign:'center', paddingTop:'60px'}}>
-                <div style={{
-                  fontSize: '13px',
-                  color: COLORS.textTertiary,
-                  fontStyle: 'italic',
-                  lineHeight: 2,
-                  letterSpacing: '0.5px'
-                }}>
-                  今天是一张白纸
-                  <br/>
-                  <span style={{fontSize:'11px'}}>想记什么就记什么</span>
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '100%',
+                textAlign: 'center',
+                padding: '0 20px'
+              }}>
+                <div 
+                  className="animate-pulse"
+                  style={{
+                    fontSize: '13px',
+                    color: '#BBB',
+                    letterSpacing: '1px',
+                    animationDuration: '6s' // 极慢隐现动画
+                  }}
+                >
+                  这里会慢慢积累你想做的事，顺其自然，不用着急。
                 </div>
               </div>
             )}
